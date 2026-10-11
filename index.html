@@ -1,0 +1,208 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#173d35">
+  <title>Sambandha | Brahmin Matrimony</title>
+  <style>
+    :root {
+      --green: #173d35;
+      --gold: #c5a46d;
+      --cream: #faf8f2;
+      --ink: #292e2b;
+      --muted: #6d756f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--cream);
+      color: var(--ink);
+      font-family: Arial, sans-serif;
+    }
+    header {
+      padding: 25px 20px;
+      background: var(--green);
+      color: white;
+      text-align: center;
+    }
+    .brand {
+      margin: 0;
+      font-family: Georgia, serif;
+      font-size: 32px;
+      letter-spacing: 1px;
+    }
+    header p { margin: 8px 0 0; color: #e5dccb; }
+    main {
+      width: min(680px, calc(100% - 32px));
+      margin: 38px auto;
+    }
+    .search, .profile {
+      background: white;
+      border: 1px solid #e8e3d8;
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 5px 20px #173d350a;
+    }
+    h2 { font-family: Georgia, serif; color: var(--green); }
+    label { display: block; margin-bottom: 8px; font-weight: 600; }
+    input, button {
+      width: 100%;
+      padding: 13px;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    input { border: 1px solid #c9cec8; margin-bottom: 12px; }
+    button {
+      border: 0;
+      background: var(--green);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background: #24594d; }
+    #result { margin-top: 20px; }
+    .profile { margin-top: 20px; }
+    .photo {
+      width: 100%;
+      max-height: 360px;
+      object-fit: cover;
+      border-radius: 10px;
+      background: #f1eee6;
+    }
+    .field { padding: 13px 0; border-bottom: 1px solid #eeeae2; }
+    .field:last-child { border-bottom: 0; }
+    .field strong { display: block; color: var(--muted); font-size: 12px;
+      text-transform: uppercase; letter-spacing: .7px; margin-bottom: 5px; }
+    .message { color: var(--muted); line-height: 1.6; }
+    footer { text-align: center; padding: 25px; color: var(--muted); font-size: 13px; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 class="brand">Sambandha</h1>
+    <p>Brahmin Matrimony · Meaningful connections, rooted in tradition</p>
+  </header>
+
+  <main>
+    <section class="search">
+      <h2>Find a Candidate Profile</h2>
+      <p class="message">Enter the Sambandha ID provided to you.</p>
+      <form id="searchForm">
+        <label for="profileId">Sambandha ID</label>
+        <input id="profileId" name="profileId"
+          placeholder="e.g. VAI-0013" required
+          pattern="[A-Za-z]{3}-[0-9]{4}"
+          maxlength="8" autocomplete="off">
+        <button type="submit">View Profile</button>
+      </form>
+      <p id="status" class="message" role="status" aria-live="polite"></p>
+    </section>
+
+    <section id="result" hidden aria-live="polite"></section>
+  </main>
+
+  <footer>
+    Sambandha | Brahmin Matrimony<br>
+    Profile information is shared for matrimonial purposes only.
+  </footer>
+
+  <script>
+    const form = document.getElementById("searchForm");
+    const input = document.getElementById("profileId");
+    const status = document.getElementById("status");
+    const result = document.getElementById("result");
+
+    const publicFields = [
+      ["firstName", "First Name"],
+      ["gender", "Gender"],
+      ["dateOfBirth", "Date of Birth"],
+      ["age", "Age"],
+      ["height", "Height"],
+      ["currentCity", "Current City"],
+      ["nativePlace", "Native Place"],
+      ["maritalStatus", "Marital Status"],
+      ["vertical", "Community"],
+      ["education", "Education"],
+      ["profession", "Profession"],
+      ["organisation", "Organisation / Business"],
+      ["languages", "Languages"],
+      ["aboutMe", "About Me"],
+      ["expectations", "Partner Expectations"]
+    ];
+
+    function addField(container, label, value) {
+      if (value === undefined || value === null || value === "") return;
+      const row = document.createElement("div");
+      row.className = "field";
+      const heading = document.createElement("strong");
+      heading.textContent = label;
+      const content = document.createElement("div");
+      content.textContent = String(value);
+      row.append(heading, content);
+      container.appendChild(row);
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const id = input.value.trim().toUpperCase();
+      if (!/^[A-Z]{3}-\d{4}$/.test(id)) {
+        status.textContent = "Please enter a valid Sambandha ID.";
+        return;
+      }
+
+      result.replaceChildren();
+      result.hidden = true;
+      status.textContent = "Looking up the profile…";
+
+      try {
+        const response = await fetch(
+          "/api/profile?id=" + encodeURIComponent(id)
+        );
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Profile could not be found.");
+        }
+
+        const card = document.createElement("article");
+        card.className = "profile";
+        const title = document.createElement("h2");
+        title.textContent = "Sambandha Profile";
+        card.appendChild(title);
+
+        if (data.primaryPhoto) {
+          const photo = document.createElement("img");
+          photo.className = "photo";
+          photo.src = data.primaryPhoto;
+          photo.alt = "Candidate profile photograph";
+          photo.referrerPolicy = "no-referrer";
+          card.appendChild(photo);
+        }
+
+        addField(card, "Sambandha ID", data.profileId);
+        for (const [key, label] of publicFields) {
+          addField(card, label, data[key]);
+        }
+
+        result.appendChild(card);
+        result.hidden = false;
+        status.textContent = "";
+      } catch (error) {
+        status.textContent =
+          error.message === "Failed to fetch"
+            ? "The profile service is not connected yet. Please try again later."
+            : error.message;
+      }
+    });
+
+    const requestedId = new URLSearchParams(location.search).get("id");
+    if (requestedId) {
+      input.value = requestedId;
+      form.requestSubmit();
+    }
+  </script>
+</body>
+</html>
