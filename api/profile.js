@@ -52,7 +52,7 @@ export default async function handler(req, res) {
       profileId: f["Sambandh ID"] || "",
       firstName: f["First Name"] || "",
       gender: f["Gender"] || "",
-      dateOfBirth: f["DOB"] || "",
+      dateOfBirth: f["Date of Birth"] || "",
       age: f["Age"] ?? "",
       height: f["Height (cm)"] ?? "",
       currentCity: f["Current City"] || "",
