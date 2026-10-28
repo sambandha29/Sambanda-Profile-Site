@@ -1,3 +1,4 @@
+
 import crypto from "node:crypto";
 
 export default async function handler(req, res) {
@@ -15,7 +16,10 @@ export default async function handler(req, res) {
     });
   }
 
+  // This endpoint deliberately does not issue links yet.
+  // Link creation must be connected to an authenticated,
+  // authorized matchmaker workflow before it is enabled.
   return res.status(501).json({
-    error: "Sharing endpoint is not enabled yet."
+    error: "Share-link creation is not enabled yet."
   });
 }
