@@ -137,8 +137,15 @@ export default async function handler(req, res) {
     );
 
     if (!update.ok) {
-      throw new Error("Could not save the secure share link.");
-    }
+  const airtableError = await update.json().catch(() => ({}));
+
+  throw new Error(
+    `Airtable update failed (${update.status}): ${
+      airtableError.error?.message ||
+      JSON.stringify(airtableError)
+    }`
+  );
+}
 
     return res.status(200).json({
       success: true,
