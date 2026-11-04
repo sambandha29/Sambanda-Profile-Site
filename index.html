@@ -144,7 +144,67 @@
       row.append(heading, content);
       container.appendChild(row);
     }
+// Handle secure recipient share links
+const shareToken = new URLSearchParams(window.location.search).get("token");
 
+if (shareToken) {
+  document.querySelector(".search").hidden = true;
+  result.hidden = false;
+  result.replaceChildren();
+
+  const loading = document.createElement("p");
+  loading.className = "message";
+  loading.textContent = "Loading shared profile…";
+  result.appendChild(loading);
+
+  (async () => {
+    try {
+      const response = await fetch(
+        "/api/share?token=" + encodeURIComponent(shareToken)
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to open this shared profile.");
+      }
+
+      const profile = data.profile;
+      result.replaceChildren();
+
+      const card = document.createElement("article");
+      card.className = "profile";
+
+      const title = document.createElement("h2");
+      title.textContent = "Shared Sambandha Profile";
+      card.appendChild(title);
+
+      if (profile.primaryPhoto) {
+        const photo = document.createElement("img");
+        photo.className = "photo";
+        photo.src = profile.primaryPhoto;
+        photo.alt = "Candidate profile photograph";
+        photo.referrerPolicy = "no-referrer";
+        card.appendChild(photo);
+      }
+
+      addField(card, "Sambandha ID", profile.profileId);
+
+      for (const [key, label] of publicFields) {
+        addField(card, label, profile[key]);
+      }
+
+      result.appendChild(card);
+
+    } catch (error) {
+      result.replaceChildren();
+      const message = document.createElement("p");
+      message.className = "message";
+      message.textContent = error.message;
+      result.appendChild(message);
+    }
+  })();
+}
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       const id = input.value.trim().toUpperCase();
