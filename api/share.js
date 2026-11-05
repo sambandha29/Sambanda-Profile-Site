@@ -295,7 +295,6 @@ const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
 
 const SHARE_TABLE = "SHARE_LINKS";
-const PROFILE_TABLE = "PROFILES";
 
 const PROFILE_FIELDS = [
   "Sambandh ID",
