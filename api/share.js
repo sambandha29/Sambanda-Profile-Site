@@ -7,6 +7,30 @@ const PROFILE_TABLE = "PROFILES";
 const SITE_URL = "https://sambanda-profile-site.vercel.app";
 const EXPIRY_DAYS = 7;
 
+const LINK_FIELDS = {
+  preferences: "Preferences",
+  family: "Family",
+  horoscope: "Horoscope",
+  photosDocuments: "Photos/Documents"
+};
+
+// Never expose internal administration or security fields.
+const PRIVATE_FIELD = /admin|internal|verification|review notes|consent|share token|share url|password|secret|communication|match|created by|last modified by/i;
+
+function publicFields(fields = {}, excluded = []) {
+  const result = {};
+
+  for (const [key, value] of Object.entries(fields)) {
+    if (excluded.includes(key)) continue;
+    if (PRIVATE_FIELD.test(key)) continue;
+    if (key === "Profile Status") continue;
+
+    result[key] = value;
+  }
+
+  return result;
+}
+
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
 
@@ -36,14 +60,26 @@ export default async function handler(req, res) {
     );
 
     if (!response.ok) {
-      throw new Error("Airtable record lookup failed.");
+      throw new Error(`Airtable lookup failed for ${table}.`);
     }
 
     return response.json();
   };
 
+  const getLinkedRecords = async (table, ids, excludedFields = []) => {
+    if (!Array.isArray(ids) || ids.length === 0) return [];
+
+    const records = await Promise.all(
+      ids.map(id => getRecord(table, id))
+    );
+
+    return records.map(record =>
+      publicFields(record.fields || {}, excludedFields)
+    );
+  };
+
   try {
-    // GET: Validate a recipient's share token and retrieve profile.
+    // GET: Validate recipient-specific token and retrieve full profile.
     if (req.method === "GET") {
       const rawToken = String(req.query?.token || "").trim();
 
@@ -81,8 +117,8 @@ export default async function handler(req, res) {
         });
       }
 
-      const fields = share.fields || {};
-      const expiry = Date.parse(fields["Expires At"] || "");
+      const shareFields = share.fields || {};
+      const expiry = Date.parse(shareFields["Expires At"] || "");
 
       if (!Number.isFinite(expiry) || Date.now() >= expiry) {
         return res.status(410).json({
@@ -90,15 +126,15 @@ export default async function handler(req, res) {
         });
       }
 
-      if (fields["Revoked At"]) {
-  return res.status(410).json({
-    error: "This share link has been revoked."
-  });
-}
+      if (shareFields["Revoked At"]) {
+        return res.status(410).json({
+          error: "This share link has been revoked."
+        });
+      }
 
-      const matchId = fields["Match"]?.[0];
-      const sharedProfileId = fields["Shared Profile"]?.[0];
-      const recipientProfileId = fields["Recipient Profile"]?.[0];
+      const matchId = shareFields["Match"]?.[0];
+      const sharedProfileId = shareFields["Shared Profile"]?.[0];
+      const recipientProfileId = shareFields["Recipient Profile"]?.[0];
 
       if (!matchId || !sharedProfileId || !recipientProfileId) {
         return res.status(403).json({
@@ -138,35 +174,80 @@ export default async function handler(req, res) {
         sharedProfileId
       );
 
-      const f = profileRecord.fields || {};
+      const fields = profileRecord.fields || {};
 
-      if (f["Profile Status"] !== "ACTIVE") {
+      if (fields["Profile Status"] !== "ACTIVE") {
         return res.status(404).json({
           error: "This profile is no longer available."
         });
       }
 
-      // Explicit Level 1 public-field whitelist.
+      // Retrieve all linked matrimonial information.
+      const [
+        preferences,
+        family,
+        horoscope,
+        photosDocuments
+      ] = await Promise.all([
+        getLinkedRecords(
+          "PREFERENCES",
+          fields[LINK_FIELDS.preferences],
+          ["Profile"]
+        ),
+        getLinkedRecords(
+          "FAMILY",
+          fields[LINK_FIELDS.family],
+          ["Profile"]
+        ),
+        getLinkedRecords(
+          "HOROSCOPE",
+          fields[LINK_FIELDS.horoscope],
+          ["Profile"]
+        ),
+        getLinkedRecords(
+          "PHOTOS_DOCUMENTS",
+          fields[LINK_FIELDS.photosDocuments],
+          ["Profile"]
+        )
+      ]);
+
+      // Keep the original profile properties for compatibility
+      // and include the complete linked profile sections.
       const profile = {
-        profileId: f["Sambandh ID"] || "",
-        firstName: f["First Name"] || "",
-        gender: f["Gender"] || "",
-      
-        age: f["Age"] ?? "",
-        height: f["Height (cm)"] ?? "",
-        currentCity: f["Current City"] || "",
-        nativePlace: f["Native Place"] || "",
-        maritalStatus: f["Marital Status"] || "",
-        vertical: f["Vertical"] || "",
+        ...publicFields(fields, [
+          "Family",
+          "Preferences",
+          "Horoscope",
+          "Photos/Documents",
+          "Matches",
+          "COMMUNICATION",
+          "Profile Status"
+        ]),
+
+        profileId: fields["Sambandh ID"] || "",
+        firstName: fields["First Name"] || "",
+        gender: fields["Gender"] || "",
+        age: fields["Age"] ?? "",
+        height: fields["Height (cm)"] ?? "",
+        currentCity: fields["Current City"] || "",
+        nativePlace: fields["Native Place"] || "",
+        maritalStatus: fields["Marital Status"] || "",
+        vertical: fields["Vertical"] || "",
         education:
-          f["Highest Education"] || f["Education"] || "",
+          fields["Highest Education"] || fields["Education"] || "",
         profession:
-          f["Profession Category"] || f["Profession"] || "",
-        organisation: f["Organisation/Business"] || "",
-        languages: f["Languages"] || "",
-        aboutMe: f["About Me"] || "",
-        expectations: f["Expectations"] || "",
-       primaryPhoto: f["Primary Photograph"]?.[0]?.url || ""
+          fields["Profession Category"] || fields["Profession"] || "",
+        organisation: fields["Organisation/Business"] || "",
+        languages: fields["Languages"] || "",
+        aboutMe: fields["About Me"] || "",
+        expectations: fields["Expectations"] || "",
+        primaryPhoto:
+          fields["Primary Photograph"]?.[0]?.url || "",
+
+        preferences,
+        family,
+        horoscope,
+        photosDocuments
       };
 
       return res.status(200).json({
@@ -175,7 +256,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // POST: Generate a share link (existing protected workflow).
+    // POST: Existing protected share-link generation workflow.
     const secret = process.env.SHARE_LINK_SECRET;
     const suppliedSecret = req.headers["x-share-secret"];
 
@@ -246,6 +327,7 @@ export default async function handler(req, res) {
     }
 
     const rawToken = crypto.randomBytes(32).toString("hex");
+
     const tokenHash = crypto
       .createHash("sha256")
       .update(rawToken)
@@ -275,6 +357,7 @@ export default async function handler(req, res) {
 
     if (!update.ok) {
       const airtableError = await update.json().catch(() => ({}));
+
       throw new Error(
         `Airtable update failed (${update.status}): ${
           airtableError.error?.message ||
@@ -291,6 +374,7 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error("Share link error:", error.message);
+
     return res.status(500).json({
       error: "Unable to process the share link."
     });
