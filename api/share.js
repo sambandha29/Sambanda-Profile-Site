@@ -160,7 +160,7 @@ export default async function handler(req, res) {
         languages: f["Languages"] || "",
         aboutMe: f["About Me"] || "",
         expectations: f["Expectations"] || "",
-        primaryPhoto: ""
+       primaryPhoto: f["Primary Photograph"]?.[0]?.url || ""
       };
 
       return res.status(200).json({
