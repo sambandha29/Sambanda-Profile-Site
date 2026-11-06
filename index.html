@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#173d35">
   <title>Sambandha | Brahmin Matrimony</title>
+
   <style>
     :root {
       --green: #173d35;
@@ -13,31 +14,42 @@
       --cream: #faf8f2;
       --ink: #292e2b;
       --muted: #6d756f;
+      --line: #eeeae2;
     }
+
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       background: var(--cream);
       color: var(--ink);
       font-family: Arial, sans-serif;
     }
+
     header {
       padding: 25px 20px;
       background: var(--green);
       color: white;
       text-align: center;
     }
+
     .brand {
       margin: 0;
       font-family: Georgia, serif;
       font-size: 32px;
       letter-spacing: 1px;
     }
-    header p { margin: 8px 0 0; color: #e5dccb; }
+
+    header p {
+      margin: 8px 0 0;
+      color: #e5dccb;
+    }
+
     main {
-      width: min(680px, calc(100% - 32px));
+      width: min(820px, calc(100% - 32px));
       margin: 38px auto;
     }
+
     .search, .profile {
       background: white;
       border: 1px solid #e8e3d8;
@@ -45,15 +57,32 @@
       padding: 24px;
       box-shadow: 0 5px 20px #173d350a;
     }
-    h2 { font-family: Georgia, serif; color: var(--green); }
-    label { display: block; margin-bottom: 8px; font-weight: 600; }
+
+    h2, h3 {
+      font-family: Georgia, serif;
+      color: var(--green);
+    }
+
+    h2 { margin-top: 0; }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
     input, button {
       width: 100%;
       padding: 13px;
       border-radius: 8px;
       font-size: 16px;
     }
-    input { border: 1px solid #c9cec8; margin-bottom: 12px; }
+
+    input {
+      border: 1px solid #c9cec8;
+      margin-bottom: 12px;
+    }
+
     button {
       border: 0;
       background: var(--green);
@@ -61,25 +90,102 @@
       font-weight: 600;
       cursor: pointer;
     }
+
     button:hover { background: #24594d; }
+
     #result { margin-top: 20px; }
+
     .profile { margin-top: 20px; }
+
     .photo {
+      display: block;
       width: 100%;
-      max-height: 360px;
-      object-fit: cover;
+      max-height: 420px;
+      object-fit: contain;
       border-radius: 10px;
       background: #f1eee6;
+      margin: 15px 0 22px;
     }
-    .field { padding: 13px 0; border-bottom: 1px solid #eeeae2; }
+
+    .profile-section {
+      margin-top: 25px;
+      padding-top: 18px;
+      border-top: 1px solid #e8e3d8;
+    }
+
+    .profile-section h3 {
+      margin: 0 0 12px;
+      font-size: 21px;
+    }
+
+    .field {
+      padding: 13px 0;
+      border-bottom: 1px solid var(--line);
+      overflow-wrap: anywhere;
+    }
+
     .field:last-child { border-bottom: 0; }
-    .field strong { display: block; color: var(--muted); font-size: 12px;
-      text-transform: uppercase; letter-spacing: .7px; margin-bottom: 5px; }
-    .message { color: var(--muted); line-height: 1.6; }
-    footer { text-align: center; padding: 25px; color: var(--muted); font-size: 13px; }
+
+    .field strong {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      margin-bottom: 5px;
+    }
+
+    .field a {
+      color: var(--green);
+      overflow-wrap: anywhere;
+    }
+
+    .document-link {
+      display: inline-block;
+      margin: 5px 10px 5px 0;
+    }
+
+    .document-image {
+      display: block;
+      max-width: 100%;
+      max-height: 300px;
+      object-fit: contain;
+      margin-top: 8px;
+      border-radius: 8px;
+    }
+
+    .message {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .notice {
+      margin-top: 20px;
+      padding: 12px 15px;
+      border-radius: 8px;
+      background: #f7f4ec;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    footer {
+      text-align: center;
+      padding: 25px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
     [hidden] { display: none !important; }
+
+    @media (max-width: 600px) {
+      main { margin: 20px auto; }
+      .search, .profile { padding: 18px; }
+      .brand { font-size: 28px; }
+    }
   </style>
 </head>
+
 <body>
   <header>
     <h1 class="brand">Sambandha</h1>
@@ -90,14 +196,21 @@
     <section class="search">
       <h2>Find a Candidate Profile</h2>
       <p class="message">Enter the Sambandha ID provided to you.</p>
+
       <form id="searchForm">
         <label for="profileId">Sambandha ID</label>
-        <input id="profileId" name="profileId"
-          placeholder="e.g. VAI-0013" required
+        <input
+          id="profileId"
+          name="profileId"
+          placeholder="e.g. VAI-0013"
+          required
           pattern="[A-Za-z]{3}-[0-9]{4}"
-          maxlength="8" autocomplete="off">
+          maxlength="8"
+          autocomplete="off"
+        >
         <button type="submit">View Profile</button>
       </form>
+
       <p id="status" class="message" role="status" aria-live="polite"></p>
     </section>
 
@@ -115,10 +228,17 @@
     const status = document.getElementById("status");
     const result = document.getElementById("result");
 
-    const publicFields = [
+    const sectionDefinitions = [
+      ["preferences", "Partner Preferences"],
+      ["family", "Family Background"],
+      ["horoscope", "Horoscope Details"],
+      ["photosDocuments", "Photos & Documents"]
+    ];
+
+    const aliasFields = [
+      ["profileId", "Sambandha ID"],
       ["firstName", "First Name"],
       ["gender", "Gender"],
-      ["dateOfBirth", "Date of Birth"],
       ["age", "Age"],
       ["height", "Height"],
       ["currentCity", "Current City"],
@@ -133,50 +253,167 @@
       ["expectations", "Partner Expectations"]
     ];
 
-    function addField(container, label, value) {
-      if (value === undefined || value === null || value === "") return;
+    // Raw Airtable fields represented by the aliases above.
+    const duplicateFields = new Set([
+      "Sambandh ID",
+      "First Name",
+      "Gender",
+      "Age",
+      "Height (cm)",
+      "Current City",
+      "Native Place",
+      "Marital Status",
+      "Vertical",
+      "Highest Education",
+      "Education",
+      "Profession Category",
+      "Profession",
+      "Organisation/Business",
+      "Languages",
+      "About Me",
+      "Expectations",
+      "Primary Photograph",
+      "Family",
+      "Preferences",
+      "Horoscope",
+      "Photos/Documents",
+      "Matches",
+      "COMMUNICATION",
+      "Profile Status"
+    ]);
+
+    function humanize(key) {
+      return String(key)
+        .replace(/([a-z])([A-Z])/g, "$1 $2")
+        .replace(/_/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function isEmpty(value) {
+      return value === undefined ||
+        value === null ||
+        value === "";
+    }
+
+    function addTextField(container, label, value) {
+      if (isEmpty(value)) return;
+
       const row = document.createElement("div");
       row.className = "field";
+
       const heading = document.createElement("strong");
       heading.textContent = label;
+
       const content = document.createElement("div");
-      content.textContent = String(value);
+
+      if (Array.isArray(value)) {
+        content.textContent = value
+          .map(item => {
+            if (item && typeof item === "object") {
+              return item.name || item.value || "";
+            }
+            return String(item);
+          })
+          .filter(Boolean)
+          .join(", ");
+      } else if (typeof value === "object") {
+        content.textContent = JSON.stringify(value);
+      } else {
+        content.textContent = String(value);
+      }
+
       row.append(heading, content);
       container.appendChild(row);
     }
-// Handle secure recipient share links
-const shareToken = new URLSearchParams(window.location.search).get("token");
 
-if (shareToken) {
-  document.querySelector(".search").hidden = true;
-  result.hidden = false;
-  result.replaceChildren();
+    function addAttachment(container, attachment) {
+      if (!attachment || !attachment.url) return;
 
-  const loading = document.createElement("p");
-  loading.className = "message";
-  loading.textContent = "Loading shared profile…";
-  result.appendChild(loading);
+      const link = document.createElement("a");
+      link.href = attachment.url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.className = "document-link";
+      link.textContent = attachment.filename || "Open document";
 
-  (async () => {
-    try {
-      const response = await fetch(
-        "/api/share?token=" + encodeURIComponent(shareToken)
-      );
+      const isImage =
+        String(attachment.type || "").startsWith("image/");
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Unable to open this shared profile.");
+      if (isImage) {
+        const image = document.createElement("img");
+        image.src = attachment.url;
+        image.alt = attachment.filename || "Shared photograph";
+        image.className = "document-image";
+        image.referrerPolicy = "no-referrer";
+        container.appendChild(image);
       }
 
-      const profile = data.profile;
-      result.replaceChildren();
+      container.appendChild(link);
+    }
 
+    function addValue(container, label, value) {
+      if (isEmpty(value)) return;
+
+      // Airtable attachment fields are arrays of objects with URLs.
+      if (
+        Array.isArray(value) &&
+        value.length &&
+        value.every(item => item && typeof item === "object" && item.url)
+      ) {
+        const row = document.createElement("div");
+        row.className = "field";
+
+        const heading = document.createElement("strong");
+        heading.textContent = humanize(label);
+        row.appendChild(heading);
+
+        value.forEach(item => addAttachment(row, item));
+        container.appendChild(row);
+        return;
+      }
+
+      addTextField(container, humanize(label), value);
+    }
+
+    function addSection(container, title, records) {
+      if (!Array.isArray(records) || records.length === 0) return;
+
+      const section = document.createElement("section");
+      section.className = "profile-section";
+
+      const heading = document.createElement("h3");
+      heading.textContent = title;
+      section.appendChild(heading);
+
+      records.forEach((record, index) => {
+        if (!record || typeof record !== "object") return;
+
+        if (records.length > 1) {
+          const subheading = document.createElement("h3");
+          subheading.style.fontSize = "16px";
+          subheading.style.marginTop = "18px";
+          subheading.textContent = `${title} ${index + 1}`;
+          section.appendChild(subheading);
+        }
+
+        Object.entries(record).forEach(([key, value]) => {
+          if (key === "Profile") return;
+          addValue(section, key, value);
+        });
+      });
+
+      if (section.querySelector(".field")) {
+        container.appendChild(section);
+      }
+    }
+
+    function renderProfile(profile, headingText = "Sambandha Profile") {
       const card = document.createElement("article");
       card.className = "profile";
 
       const title = document.createElement("h2");
-      title.textContent = "Shared Sambandha Profile";
+      title.textContent = headingText;
       card.appendChild(title);
 
       if (profile.primaryPhoto) {
@@ -188,26 +425,111 @@ if (shareToken) {
         card.appendChild(photo);
       }
 
-      addField(card, "Sambandha ID", profile.profileId);
+      // Main profile details.
+      const mainSection = document.createElement("section");
+      mainSection.className = "profile-section";
 
-      for (const [key, label] of publicFields) {
-        addField(card, label, profile[key]);
+      const mainHeading = document.createElement("h3");
+      mainHeading.textContent = "Personal & Matrimonial Details";
+      mainSection.appendChild(mainHeading);
+
+      aliasFields.forEach(([key, label]) => {
+        addTextField(mainSection, label, profile[key]);
+      });
+
+      // Display all other shareable PROFILES fields returned by share.js.
+      Object.entries(profile).forEach(([key, value]) => {
+        if (duplicateFields.has(key)) return;
+
+        if ([
+          "profileId", "firstName", "gender", "age", "height",
+          "currentCity", "nativePlace", "maritalStatus", "vertical",
+          "education", "profession", "organisation", "languages",
+          "aboutMe", "expectations", "primaryPhoto",
+          "preferences", "family", "horoscope", "photosDocuments"
+        ].includes(key)) return;
+
+        addValue(mainSection, key, value);
+      });
+
+      if (mainSection.querySelector(".field")) {
+        card.appendChild(mainSection);
       }
 
-      result.appendChild(card);
+      // Render linked Airtable records returned by share.js.
+      sectionDefinitions.forEach(([key, title]) => {
+        addSection(card, title, profile[key]);
+      });
 
-    } catch (error) {
-      result.replaceChildren();
-      const message = document.createElement("p");
-      message.className = "message";
-      message.textContent = error.message;
-      result.appendChild(message);
+      const notice = document.createElement("p");
+      notice.className = "notice";
+      notice.textContent =
+        "This profile has been shared privately through Sambandha for matrimonial consideration. Please treat all personal and family information as confidential.";
+      card.appendChild(notice);
+
+      return card;
     }
-  })();
-}
+
+    function showError(message) {
+      result.replaceChildren();
+
+      const paragraph = document.createElement("p");
+      paragraph.className = "message";
+      paragraph.textContent = message;
+
+      result.appendChild(paragraph);
+      result.hidden = false;
+    }
+
+    // Secure recipient-specific share link.
+    const shareToken =
+      new URLSearchParams(window.location.search).get("token");
+
+    if (shareToken) {
+      document.querySelector(".search").hidden = true;
+      result.hidden = false;
+
+      const loading = document.createElement("p");
+      loading.className = "message";
+      loading.textContent = "Loading shared profile…";
+      result.replaceChildren(loading);
+
+      (async () => {
+        try {
+          const response = await fetch(
+            "/api/share?token=" + encodeURIComponent(shareToken),
+            { cache: "no-store" }
+          );
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(
+              data.error || "Unable to open this shared profile."
+            );
+          }
+
+          if (!data.profile) {
+            throw new Error("The shared profile data is unavailable.");
+          }
+
+          result.replaceChildren();
+          result.appendChild(
+            renderProfile(data.profile, "Shared Sambandha Profile")
+          );
+
+        } catch (error) {
+          showError(error.message);
+        }
+      })();
+    }
+
+    // Existing Sambandha ID lookup remains separate.
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
+
       const id = input.value.trim().toUpperCase();
+
       if (!/^[A-Z]{3}-\d{4}$/.test(id)) {
         status.textContent = "Please enter a valid Sambandha ID.";
         return;
@@ -219,37 +541,23 @@ if (shareToken) {
 
       try {
         const response = await fetch(
-          "/api/profile?id=" + encodeURIComponent(id)
+          "/api/profile?id=" + encodeURIComponent(id),
+          { cache: "no-store" }
         );
+
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || "Profile could not be found.");
+          throw new Error(
+            data.error || "Profile could not be found."
+          );
         }
 
-        const card = document.createElement("article");
-        card.className = "profile";
-        const title = document.createElement("h2");
-        title.textContent = "Sambandha Profile";
-        card.appendChild(title);
-
-        if (data.primaryPhoto) {
-          const photo = document.createElement("img");
-          photo.className = "photo";
-          photo.src = data.primaryPhoto;
-          photo.alt = "Candidate profile photograph";
-          photo.referrerPolicy = "no-referrer";
-          card.appendChild(photo);
-        }
-
-        addField(card, "Sambandha ID", data.profileId);
-        for (const [key, label] of publicFields) {
-          addField(card, label, data[key]);
-        }
-
-        result.appendChild(card);
+        result.replaceChildren();
+        result.appendChild(renderProfile(data, "Sambandha Profile"));
         result.hidden = false;
         status.textContent = "";
+
       } catch (error) {
         status.textContent =
           error.message === "Failed to fetch"
@@ -258,8 +566,10 @@ if (shareToken) {
       }
     });
 
-    const requestedId = new URLSearchParams(location.search).get("id");
-    if (requestedId) {
+    const requestedId =
+      new URLSearchParams(location.search).get("id");
+
+    if (requestedId && !shareToken) {
       input.value = requestedId;
       form.requestSubmit();
     }
