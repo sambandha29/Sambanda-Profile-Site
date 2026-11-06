@@ -90,6 +90,12 @@ export default async function handler(req, res) {
         });
       }
 
+      if (fields["Revoked At"]) {
+  return res.status(410).json({
+    error: "This share link has been revoked."
+  });
+}
+
       const matchId = fields["Match"]?.[0];
       const sharedProfileId = fields["Shared Profile"]?.[0];
       const recipientProfileId = fields["Recipient Profile"]?.[0];
