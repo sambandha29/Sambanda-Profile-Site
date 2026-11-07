@@ -97,16 +97,6 @@
 
     .profile { margin-top: 20px; }
 
-    .photo {
-      display: block;
-      width: 100%;
-      max-height: 420px;
-      object-fit: contain;
-      border-radius: 10px;
-      background: #f1eee6;
-      margin: 15px 0 22px;
-    }
-
     .profile-section {
       margin-top: 25px;
       padding-top: 18px;
@@ -140,18 +130,40 @@
       overflow-wrap: anywhere;
     }
 
+    .photo-gallery {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 15px;
+    }
+
+    .photo-item {
+      margin: 0;
+      border-radius: 9px;
+      overflow: hidden;
+      background: #f1eee6;
+    }
+
+    .photo-item img {
+      display: block;
+      width: 100%;
+      height: 260px;
+      object-fit: contain;
+      background: #f1eee6;
+    }
+
+    .photo-item a {
+      display: block;
+      padding: 8px;
+      color: var(--green);
+      font-size: 12px;
+      overflow-wrap: anywhere;
+      text-decoration: none;
+    }
+
     .document-link {
       display: inline-block;
       margin: 5px 10px 5px 0;
-    }
-
-    .document-image {
-      display: block;
-      max-width: 100%;
-      max-height: 300px;
-      object-fit: contain;
-      margin-top: 8px;
-      border-radius: 8px;
     }
 
     .message {
@@ -182,6 +194,8 @@
       main { margin: 20px auto; }
       .search, .profile { padding: 18px; }
       .brand { font-size: 28px; }
+      .photo-gallery { grid-template-columns: 1fr; }
+      .photo-item img { height: 300px; }
     }
   </style>
 </head>
@@ -228,13 +242,6 @@
     const status = document.getElementById("status");
     const result = document.getElementById("result");
 
-    const sectionDefinitions = [
-      ["preferences", "Partner Preferences"],
-      ["family", "Family Background"],
-      ["horoscope", "Horoscope Details"],
-      ["photosDocuments", "Photos & Documents"]
-    ];
-
     const aliasFields = [
       ["profileId", "Sambandha ID"],
       ["firstName", "First Name"],
@@ -253,34 +260,39 @@
       ["expectations", "Partner Expectations"]
     ];
 
-    // Raw Airtable fields represented by the aliases above.
-    const duplicateFields = new Set([
-      "Sambandh ID",
-      "First Name",
-      "Gender",
-      "Age",
-      "Height (cm)",
-      "Current City",
-      "Native Place",
-      "Marital Status",
-      "Vertical",
-      "Highest Education",
-      "Education",
-      "Profession Category",
-      "Profession",
-      "Organisation/Business",
-      "Languages",
-      "About Me",
-      "Expectations",
-      "Primary Photograph",
-      "Family",
-      "Preferences",
-      "Horoscope",
-      "Photos/Documents",
-      "Matches",
-      "COMMUNICATION",
-      "Profile Status"
-    ]);
+    // Only these additional API fields are rendered.
+    const additionalProfileFields = [
+      "DOB",
+      "Date of Birth",
+      "Profile Headline",
+      "Detailed Personal Information",
+      "Qualification Details",
+      "Income Range",
+      "Family Background",
+      "Additional Information",
+      "Phone",
+      "Phone Number",
+      "Mobile",
+      "Mobile Number",
+      "Email",
+      "Email Address"
+    ];
+
+    const sectionDefinitions = [
+      ["preferences", "Partner Preferences"],
+      ["family", "Family Background"],
+      ["horoscope", "Horoscope Details"]
+    ];
+
+    const aliasKeys = new Set(
+      aliasFields.map(([key]) => key)
+    );
+
+    function isEmpty(value) {
+      return value === undefined ||
+        value === null ||
+        value === "";
+    }
 
     function humanize(key) {
       return String(key)
@@ -288,12 +300,6 @@
         .replace(/_/g, " ")
         .replace(/\s+/g, " ")
         .trim();
-    }
-
-    function isEmpty(value) {
-      return value === undefined ||
-        value === null ||
-        value === "";
     }
 
     function addTextField(container, label, value) {
@@ -337,29 +343,21 @@
       link.className = "document-link";
       link.textContent = attachment.filename || "Open document";
 
-      const isImage =
-        String(attachment.type || "").startsWith("image/");
-
-      if (isImage) {
-        const image = document.createElement("img");
-        image.src = attachment.url;
-        image.alt = attachment.filename || "Shared photograph";
-        image.className = "document-image";
-        image.referrerPolicy = "no-referrer";
-        container.appendChild(image);
-      }
-
       container.appendChild(link);
     }
 
     function addValue(container, label, value) {
       if (isEmpty(value)) return;
 
-      // Airtable attachment fields are arrays of objects with URLs.
+      // Render attachment fields as links, not raw Airtable objects.
       if (
         Array.isArray(value) &&
         value.length &&
-        value.every(item => item && typeof item === "object" && item.url)
+        value.every(item =>
+          item &&
+          typeof item === "object" &&
+          typeof item.url === "string"
+        )
       ) {
         const row = document.createElement("div");
         row.className = "field";
@@ -374,6 +372,69 @@
       }
 
       addTextField(container, humanize(label), value);
+    }
+
+    function renderPhotos(profile, container) {
+      const photos = [];
+      const seen = new Set();
+
+      function addPhoto(photo) {
+        if (!photo || typeof photo.url !== "string") return;
+        if (!photo.url.startsWith("https://")) return;
+        if (seen.has(photo.url)) return;
+
+        seen.add(photo.url);
+        photos.push(photo);
+      }
+
+      // The API returns all uploaded images here.
+      if (Array.isArray(profile.photos)) {
+        profile.photos.forEach(addPhoto);
+      }
+
+      // Fallback for profiles that only have a primary photograph.
+      if (profile.primaryPhoto) {
+        addPhoto({
+          url: profile.primaryPhoto,
+          filename: "Primary Photograph",
+          type: "image"
+        });
+      }
+
+      if (photos.length === 0) return;
+
+      const section = document.createElement("section");
+      section.className = "profile-section";
+
+      const heading = document.createElement("h3");
+      heading.textContent = "Photographs";
+      section.appendChild(heading);
+
+      const gallery = document.createElement("div");
+      gallery.className = "photo-gallery";
+
+      photos.forEach((photo, index) => {
+        const figure = document.createElement("figure");
+        figure.className = "photo-item";
+
+        const image = document.createElement("img");
+        image.src = photo.url;
+        image.alt = photo.filename || `Candidate photograph ${index + 1}`;
+        image.loading = "lazy";
+        image.referrerPolicy = "no-referrer";
+
+        const link = document.createElement("a");
+        link.href = photo.url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = photo.filename || `View photograph ${index + 1}`;
+
+        figure.append(image, link);
+        gallery.appendChild(figure);
+      });
+
+      section.appendChild(gallery);
+      container.appendChild(section);
     }
 
     function addSection(container, title, records) {
@@ -398,7 +459,8 @@
         }
 
         Object.entries(record).forEach(([key, value]) => {
-          if (key === "Profile") return;
+          // Never render Airtable linked-record references here.
+          if (key === "Profile" || key === "File") return;
           addValue(section, key, value);
         });
       });
@@ -416,16 +478,10 @@
       title.textContent = headingText;
       card.appendChild(title);
 
-      if (profile.primaryPhoto) {
-        const photo = document.createElement("img");
-        photo.className = "photo";
-        photo.src = profile.primaryPhoto;
-        photo.alt = "Candidate profile photograph";
-        photo.referrerPolicy = "no-referrer";
-        card.appendChild(photo);
-      }
+      // All photographs appear together in one gallery.
+      renderPhotos(profile, card);
 
-      // Main profile details.
+      // Main matrimonial details.
       const mainSection = document.createElement("section");
       mainSection.className = "profile-section";
 
@@ -437,34 +493,24 @@
         addTextField(mainSection, label, profile[key]);
       });
 
-      // Display all other shareable PROFILES fields returned by share.js.
-      Object.entries(profile).forEach(([key, value]) => {
-        if (duplicateFields.has(key)) return;
-
-        if ([
-          "profileId", "firstName", "gender", "age", "height",
-          "currentCity", "nativePlace", "maritalStatus", "vertical",
-          "education", "profession", "organisation", "languages",
-          "aboutMe", "expectations", "primaryPhoto",
-          "preferences", "family", "horoscope", "photosDocuments"
-        ].includes(key)) return;
-
-        addValue(mainSection, key, value);
+      additionalProfileFields.forEach(key => {
+        addValue(mainSection, key, profile[key]);
       });
 
       if (mainSection.querySelector(".field")) {
         card.appendChild(mainSection);
       }
 
-      // Render linked Airtable records returned by share.js.
-      sectionDefinitions.forEach(([key, title]) => {
-        addSection(card, title, profile[key]);
+      // Linked matrimonial information.
+      sectionDefinitions.forEach(([key, sectionTitle]) => {
+        addSection(card, sectionTitle, profile[key]);
       });
 
       const notice = document.createElement("p");
       notice.className = "notice";
       notice.textContent =
         "This profile has been shared privately through Sambandha for matrimonial consideration. Please treat all personal and family information as confidential.";
+
       card.appendChild(notice);
 
       return card;
@@ -481,7 +527,7 @@
       result.hidden = false;
     }
 
-    // Secure recipient-specific share link.
+    // Secure recipient-specific sharing.
     const shareToken =
       new URLSearchParams(window.location.search).get("token");
 
@@ -525,7 +571,7 @@
     }
 
     // Existing Sambandha ID lookup remains separate.
-    form.addEventListener("submit", async (event) => {
+    form.addEventListener("submit", async event => {
       event.preventDefault();
 
       const id = input.value.trim().toUpperCase();
@@ -554,7 +600,10 @@
         }
 
         result.replaceChildren();
-        result.appendChild(renderProfile(data, "Sambandha Profile"));
+        result.appendChild(
+          renderProfile(data, "Sambandha Profile")
+        );
+
         result.hidden = false;
         status.textContent = "";
 
