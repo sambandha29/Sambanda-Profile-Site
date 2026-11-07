@@ -162,8 +162,10 @@
     }
 
     .document-link {
-      display: inline-block;
-      margin: 5px 10px 5px 0;
+      display: block;
+      margin: 9px 0;
+      color: var(--green);
+      overflow-wrap: anywhere;
     }
 
     .message {
@@ -242,6 +244,7 @@
     const status = document.getElementById("status");
     const result = document.getElementById("result");
 
+    // Candidate-facing aliases returned by the share API.
     const aliasFields = [
       ["profileId", "Sambandha ID"],
       ["firstName", "First Name"],
@@ -257,10 +260,10 @@
       ["organisation", "Organisation / Business"],
       ["languages", "Languages"],
       ["aboutMe", "About Me"],
-      ["expectations", "Partner Expectations"]
+      ["expectations", "Expectations"]
     ];
 
-    // Only these additional API fields are rendered.
+    // Additional candidate-facing PROFILES fields.
     const additionalProfileFields = [
       "DOB",
       "Date of Birth",
@@ -278,15 +281,11 @@
       "Email Address"
     ];
 
+    // Partner Preferences are deliberately not included.
     const sectionDefinitions = [
-      ["preferences", "Partner Preferences"],
       ["family", "Family Background"],
       ["horoscope", "Horoscope Details"]
     ];
-
-    const aliasKeys = new Set(
-      aliasFields.map(([key]) => key)
-    );
 
     function isEmpty(value) {
       return value === undefined ||
@@ -336,12 +335,15 @@
     function addAttachment(container, attachment) {
       if (!attachment || !attachment.url) return;
 
+      if (!attachment.url.startsWith("https://")) return;
+
       const link = document.createElement("a");
       link.href = attachment.url;
       link.target = "_blank";
       link.rel = "noopener noreferrer";
       link.className = "document-link";
-      link.textContent = attachment.filename || "Open document";
+      link.textContent =
+        attachment.filename || "Open document";
 
       container.appendChild(link);
     }
@@ -349,7 +351,7 @@
     function addValue(container, label, value) {
       if (isEmpty(value)) return;
 
-      // Render attachment fields as links, not raw Airtable objects.
+      // Attachment arrays are displayed as links.
       if (
         Array.isArray(value) &&
         value.length &&
@@ -387,12 +389,10 @@
         photos.push(photo);
       }
 
-      // The API returns all uploaded images here.
       if (Array.isArray(profile.photos)) {
         profile.photos.forEach(addPhoto);
       }
 
-      // Fallback for profiles that only have a primary photograph.
       if (profile.primaryPhoto) {
         addPhoto({
           url: profile.primaryPhoto,
@@ -419,7 +419,8 @@
 
         const image = document.createElement("img");
         image.src = photo.url;
-        image.alt = photo.filename || `Candidate photograph ${index + 1}`;
+        image.alt =
+          photo.filename || `Candidate photograph ${index + 1}`;
         image.loading = "lazy";
         image.referrerPolicy = "no-referrer";
 
@@ -427,7 +428,8 @@
         link.href = photo.url;
         link.target = "_blank";
         link.rel = "noopener noreferrer";
-        link.textContent = photo.filename || `View photograph ${index + 1}`;
+        link.textContent =
+          photo.filename || `View photograph ${index + 1}`;
 
         figure.append(image, link);
         gallery.appendChild(figure);
@@ -435,6 +437,44 @@
 
       section.appendChild(gallery);
       container.appendChild(section);
+    }
+
+    function renderDocuments(profile, container) {
+      const documents = Array.isArray(profile.documents)
+        ? profile.documents
+        : [];
+
+      if (documents.length === 0) return;
+
+      const section = document.createElement("section");
+      section.className = "profile-section";
+
+      const heading = document.createElement("h3");
+      heading.textContent = "Documents & Certificates";
+      section.appendChild(heading);
+
+      documents.forEach(document => {
+        if (!document || !document.url) return;
+
+        const row = document.createElement("div");
+        row.className = "field";
+
+        if (document.documentType) {
+          const type = document.createElement("strong");
+          type.textContent = document.documentType;
+          row.appendChild(type);
+        }
+
+        addAttachment(row, document);
+
+        if (row.querySelector("a")) {
+          section.appendChild(row);
+        }
+      });
+
+      if (section.querySelector("a")) {
+        container.appendChild(section);
+      }
     }
 
     function addSection(container, title, records) {
@@ -451,16 +491,16 @@
         if (!record || typeof record !== "object") return;
 
         if (records.length > 1) {
-          const subheading = document.createElement("h3");
-          subheading.style.fontSize = "16px";
-          subheading.style.marginTop = "18px";
+          const subheading = document.createElement("h4");
           subheading.textContent = `${title} ${index + 1}`;
           section.appendChild(subheading);
         }
 
         Object.entries(record).forEach(([key, value]) => {
-          // Never render Airtable linked-record references here.
+          // Never display Airtable relationship references.
           if (key === "Profile" || key === "File") return;
+          if (/admin|internal|verification|consent|share token|share url|password|secret|communication|match|created by|last modified by/i.test(key)) return;
+
           addValue(section, key, value);
         });
       });
@@ -478,10 +518,10 @@
       title.textContent = headingText;
       card.appendChild(title);
 
-      // All photographs appear together in one gallery.
+      // All candidate photographs.
       renderPhotos(profile, card);
 
-      // Main matrimonial details.
+      // Main personal and matrimonial details.
       const mainSection = document.createElement("section");
       mainSection.className = "profile-section";
 
@@ -501,10 +541,13 @@
         card.appendChild(mainSection);
       }
 
-      // Linked matrimonial information.
+      // Family and horoscope details only.
       sectionDefinitions.forEach(([key, sectionTitle]) => {
         addSection(card, sectionTitle, profile[key]);
       });
+
+      // All uploaded documents and certificates.
+      renderDocuments(profile, card);
 
       const notice = document.createElement("p");
       notice.className = "notice";
@@ -527,7 +570,10 @@
       result.hidden = false;
     }
 
-    // Secure recipient-specific sharing.
+    // ==========================================
+    // SECURE RECIPIENT-SPECIFIC PROFILE SHARING
+    // ==========================================
+
     const shareToken =
       new URLSearchParams(window.location.search).get("token");
 
@@ -560,6 +606,7 @@
           }
 
           result.replaceChildren();
+
           result.appendChild(
             renderProfile(data.profile, "Shared Sambandha Profile")
           );
@@ -570,7 +617,10 @@
       })();
     }
 
-    // Existing Sambandha ID lookup remains separate.
+    // ==========================================
+    // EXISTING SAMBANDHA ID LOOKUP
+    // ==========================================
+
     form.addEventListener("submit", async event => {
       event.preventDefault();
 
@@ -615,6 +665,7 @@
       }
     });
 
+    // Support existing ID-based links.
     const requestedId =
       new URLSearchParams(location.search).get("id");
 
