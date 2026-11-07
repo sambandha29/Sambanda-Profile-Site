@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#173d35">
   <title>Sambandha | Brahmin Matrimony</title>
-
   <style>
     :root {
       --green: #173d35;
@@ -16,40 +15,27 @@
       --muted: #6d756f;
       --line: #eeeae2;
     }
-
     * { box-sizing: border-box; }
-
     body {
       margin: 0;
       background: var(--cream);
       color: var(--ink);
       font-family: Arial, sans-serif;
     }
-
     header {
       padding: 25px 20px;
       background: var(--green);
       color: white;
       text-align: center;
     }
-
     .brand {
       margin: 0;
       font-family: Georgia, serif;
       font-size: 32px;
       letter-spacing: 1px;
     }
-
-    header p {
-      margin: 8px 0 0;
-      color: #e5dccb;
-    }
-
-    main {
-      width: min(820px, calc(100% - 32px));
-      margin: 38px auto;
-    }
-
+    header p { margin: 8px 0 0; color: #e5dccb; }
+    main { width: min(820px, calc(100% - 32px)); margin: 38px auto; }
     .search, .profile {
       background: white;
       border: 1px solid #e8e3d8;
@@ -57,32 +43,16 @@
       padding: 24px;
       box-shadow: 0 5px 20px #173d350a;
     }
-
-    h2, h3 {
-      font-family: Georgia, serif;
-      color: var(--green);
-    }
-
+    h2, h3 { font-family: Georgia, serif; color: var(--green); }
     h2 { margin-top: 0; }
-
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
-    }
-
+    label { display: block; margin-bottom: 8px; font-weight: 600; }
     input, button {
       width: 100%;
       padding: 13px;
       border-radius: 8px;
       font-size: 16px;
     }
-
-    input {
-      border: 1px solid #c9cec8;
-      margin-bottom: 12px;
-    }
-
+    input { border: 1px solid #c9cec8; margin-bottom: 12px; }
     button {
       border: 0;
       background: var(--green);
@@ -90,32 +60,21 @@
       font-weight: 600;
       cursor: pointer;
     }
-
     button:hover { background: #24594d; }
-
     #result { margin-top: 20px; }
-
     .profile { margin-top: 20px; }
-
     .profile-section {
       margin-top: 25px;
       padding-top: 18px;
       border-top: 1px solid #e8e3d8;
     }
-
-    .profile-section h3 {
-      margin: 0 0 12px;
-      font-size: 21px;
-    }
-
+    .profile-section h3 { margin: 0 0 12px; font-size: 21px; }
     .field {
       padding: 13px 0;
       border-bottom: 1px solid var(--line);
       overflow-wrap: anywhere;
     }
-
     .field:last-child { border-bottom: 0; }
-
     .field strong {
       display: block;
       color: var(--muted);
@@ -124,26 +83,19 @@
       letter-spacing: .7px;
       margin-bottom: 5px;
     }
-
-    .field a {
-      color: var(--green);
-      overflow-wrap: anywhere;
-    }
-
+    .field a { color: var(--green); overflow-wrap: anywhere; }
     .photo-gallery {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px;
       margin-top: 15px;
     }
-
     .photo-item {
       margin: 0;
       border-radius: 9px;
       overflow: hidden;
       background: #f1eee6;
     }
-
     .photo-item img {
       display: block;
       width: 100%;
@@ -151,7 +103,6 @@
       object-fit: contain;
       background: #f1eee6;
     }
-
     .photo-item a {
       display: block;
       padding: 8px;
@@ -160,19 +111,13 @@
       overflow-wrap: anywhere;
       text-decoration: none;
     }
-
     .document-link {
       display: block;
       margin: 9px 0;
       color: var(--green);
       overflow-wrap: anywhere;
     }
-
-    .message {
-      color: var(--muted);
-      line-height: 1.6;
-    }
-
+    .message { color: var(--muted); line-height: 1.6; }
     .notice {
       margin-top: 20px;
       padding: 12px 15px;
@@ -182,16 +127,13 @@
       font-size: 13px;
       line-height: 1.6;
     }
-
     footer {
       text-align: center;
       padding: 25px;
       color: var(--muted);
       font-size: 13px;
     }
-
     [hidden] { display: none !important; }
-
     @media (max-width: 600px) {
       main { margin: 20px auto; }
       .search, .profile { padding: 18px; }
@@ -201,7 +143,6 @@
     }
   </style>
 </head>
-
 <body>
   <header>
     <h1 class="brand">Sambandha</h1>
@@ -212,24 +153,16 @@
     <section class="search">
       <h2>Find a Candidate Profile</h2>
       <p class="message">Enter the Sambandha ID provided to you.</p>
-
       <form id="searchForm">
         <label for="profileId">Sambandha ID</label>
-        <input
-          id="profileId"
-          name="profileId"
-          placeholder="e.g. VAI-0013"
-          required
-          pattern="[A-Za-z]{3}-[0-9]{4}"
-          maxlength="8"
-          autocomplete="off"
-        >
+        <input id="profileId" name="profileId"
+          placeholder="e.g. VAI-0013" required
+          pattern="[A-Za-z]{3}-[0-9]{4}" maxlength="8"
+          autocomplete="off">
         <button type="submit">View Profile</button>
       </form>
-
       <p id="status" class="message" role="status" aria-live="polite"></p>
     </section>
-
     <section id="result" hidden aria-live="polite"></section>
   </main>
 
@@ -244,7 +177,6 @@
     const status = document.getElementById("status");
     const result = document.getElementById("result");
 
-    // Candidate-facing aliases returned by the share API.
     const aliasFields = [
       ["profileId", "Sambandha ID"],
       ["firstName", "First Name"],
@@ -263,34 +195,22 @@
       ["expectations", "Expectations"]
     ];
 
-    // Additional candidate-facing PROFILES fields.
     const additionalProfileFields = [
-      "DOB",
-      "Date of Birth",
-      "Profile Headline",
-      "Detailed Personal Information",
-      "Qualification Details",
-      "Income Range",
-      "Family Background",
-      "Additional Information",
-      "Phone",
-      "Phone Number",
-      "Mobile",
-      "Mobile Number",
-      "Email",
-      "Email Address"
+      "DOB", "Date of Birth", "Profile Headline",
+      "Detailed Personal Information", "Qualification Details",
+      "Income Range", "Family Background", "Additional Information",
+      "Phone", "Phone Number", "Mobile", "Mobile Number",
+      "Email", "Email Address"
     ];
 
-    // Partner Preferences are deliberately not included.
     const sectionDefinitions = [
       ["family", "Family Background"],
-      ["horoscope", "Horoscope Details"]
+      ["horoscope", "Horoscope Details"],
+      ["photosDocuments", "Photos & Documents"]
     ];
 
     function isEmpty(value) {
-      return value === undefined ||
-        value === null ||
-        value === "";
+      return value === undefined || value === null || value === "";
     }
 
     function humanize(key) {
@@ -303,76 +223,92 @@
 
     function addTextField(container, label, value) {
       if (isEmpty(value)) return;
-
       const row = document.createElement("div");
       row.className = "field";
-
       const heading = document.createElement("strong");
       heading.textContent = label;
-
       const content = document.createElement("div");
 
       if (Array.isArray(value)) {
-        content.textContent = value
-          .map(item => {
-            if (item && typeof item === "object") {
-              return item.name || item.value || "";
-            }
-            return String(item);
-          })
-          .filter(Boolean)
-          .join(", ");
+        content.textContent = value.map(item => {
+          if (item && typeof item === "object") return item.name || item.value || "";
+          return String(item);
+        }).filter(Boolean).join(", ");
       } else if (typeof value === "object") {
         content.textContent = JSON.stringify(value);
       } else {
         content.textContent = String(value);
       }
-
       row.append(heading, content);
       container.appendChild(row);
     }
 
-    function addAttachment(container, attachment) {
-      if (!attachment || !attachment.url) return;
+    function safeAttachmentUrl(url) {
+      try {
+        const parsed = new URL(url);
+        return parsed.protocol === "https:" ? parsed.href : null;
+      } catch {
+        return null;
+      }
+    }
 
-      if (!attachment.url.startsWith("https://")) return;
+    function isImageAttachment(file) {
+      const type = String(file.type || "").toLowerCase();
+      const name = String(file.filename || file.name || "").toLowerCase();
+      return type.startsWith("image/") || /\.(jpe?g|png|webp|gif)$/i.test(name);
+    }
+
+    function addAttachment(container, attachment, options = {}) {
+      if (!attachment || typeof attachment !== "object") return;
+      const url = safeAttachmentUrl(attachment.url);
+      if (!url) return;
+
+      const filename = attachment.filename || attachment.name || "Open attachment";
+
+      if (isImageAttachment(attachment) && options.previewImages !== false) {
+        const figure = document.createElement("figure");
+        figure.className = "photo-item";
+        const image = document.createElement("img");
+        image.src = url;
+        image.alt = filename;
+        image.loading = "lazy";
+        image.referrerPolicy = "no-referrer";
+        const link = document.createElement("a");
+        link.href = url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = "Open " + filename;
+        figure.append(image, link);
+        container.appendChild(figure);
+        return;
+      }
 
       const link = document.createElement("a");
-      link.href = attachment.url;
+      link.href = url;
       link.target = "_blank";
       link.rel = "noopener noreferrer";
       link.className = "document-link";
-      link.textContent =
-        attachment.filename || "Open document";
-
+      link.textContent = filename;
       container.appendChild(link);
     }
 
     function addValue(container, label, value) {
       if (isEmpty(value)) return;
 
-      // Attachment arrays are displayed as links.
-      if (
-        Array.isArray(value) &&
-        value.length &&
-        value.every(item =>
-          item &&
-          typeof item === "object" &&
-          typeof item.url === "string"
-        )
-      ) {
+      if (Array.isArray(value) &&
+          value.some(item => item && typeof item === "object" && item.url)) {
         const row = document.createElement("div");
         row.className = "field";
-
         const heading = document.createElement("strong");
         heading.textContent = humanize(label);
         row.appendChild(heading);
-
-        value.forEach(item => addAttachment(row, item));
-        container.appendChild(row);
+        const gallery = document.createElement("div");
+        gallery.className = "photo-gallery";
+        value.forEach(item => addAttachment(gallery, item));
+        if (gallery.children.length) row.appendChild(gallery);
+        if (row.children.length > 1) container.appendChild(row);
         return;
       }
-
       addTextField(container, humanize(label), value);
     }
 
@@ -382,55 +318,48 @@
 
       function addPhoto(photo) {
         if (!photo || typeof photo.url !== "string") return;
-        if (!photo.url.startsWith("https://")) return;
-        if (seen.has(photo.url)) return;
-
+        if (!photo.url.startsWith("https://") || seen.has(photo.url)) return;
         seen.add(photo.url);
         photos.push(photo);
       }
 
-      if (Array.isArray(profile.photos)) {
-        profile.photos.forEach(addPhoto);
-      }
+      if (Array.isArray(profile.photos)) profile.photos.forEach(addPhoto);
 
-      if (profile.primaryPhoto) {
+      if (typeof profile.primaryPhoto === "string") {
         addPhoto({
           url: profile.primaryPhoto,
           filename: "Primary Photograph",
-          type: "image"
+          type: "image/jpeg"
         });
+      } else if (Array.isArray(profile.primaryPhoto)) {
+        profile.primaryPhoto.forEach(addPhoto);
+      } else if (profile.primaryPhoto && typeof profile.primaryPhoto === "object") {
+        addPhoto(profile.primaryPhoto);
       }
 
-      if (photos.length === 0) return;
+      if (!photos.length) return;
 
       const section = document.createElement("section");
       section.className = "profile-section";
-
       const heading = document.createElement("h3");
       heading.textContent = "Photographs";
       section.appendChild(heading);
-
       const gallery = document.createElement("div");
       gallery.className = "photo-gallery";
 
       photos.forEach((photo, index) => {
         const figure = document.createElement("figure");
         figure.className = "photo-item";
-
         const image = document.createElement("img");
         image.src = photo.url;
-        image.alt =
-          photo.filename || `Candidate photograph ${index + 1}`;
+        image.alt = photo.filename || `Candidate photograph ${index + 1}`;
         image.loading = "lazy";
         image.referrerPolicy = "no-referrer";
-
         const link = document.createElement("a");
         link.href = photo.url;
         link.target = "_blank";
         link.rel = "noopener noreferrer";
-        link.textContent =
-          photo.filename || `View photograph ${index + 1}`;
-
+        link.textContent = photo.filename || `View photograph ${index + 1}`;
         figure.append(image, link);
         gallery.appendChild(figure);
       });
@@ -440,49 +369,36 @@
     }
 
     function renderDocuments(profile, container) {
-      const documents = Array.isArray(profile.documents)
-        ? profile.documents
-        : [];
-
-      if (documents.length === 0) return;
+      const documents = Array.isArray(profile.documents) ? profile.documents : [];
+      if (!documents.length) return;
 
       const section = document.createElement("section");
       section.className = "profile-section";
-
       const heading = document.createElement("h3");
       heading.textContent = "Documents & Certificates";
       section.appendChild(heading);
 
-      documents.forEach(document => {
-        if (!document || !document.url) return;
-
+      documents.forEach(file => {
+        if (!file || !file.url) return;
         const row = document.createElement("div");
         row.className = "field";
-
-        if (document.documentType) {
+        if (file.documentType) {
           const type = document.createElement("strong");
-          type.textContent = document.documentType;
+          type.textContent = file.documentType;
           row.appendChild(type);
         }
-
-        addAttachment(row, document);
-
-        if (row.querySelector("a")) {
-          section.appendChild(row);
-        }
+        addAttachment(row, file);
+        if (row.querySelector("a")) section.appendChild(row);
       });
 
-      if (section.querySelector("a")) {
-        container.appendChild(section);
-      }
+      if (section.querySelector("a")) container.appendChild(section);
     }
 
     function addSection(container, title, records) {
-      if (!Array.isArray(records) || records.length === 0) return;
+      if (!Array.isArray(records) || !records.length) return;
 
       const section = document.createElement("section");
       section.className = "profile-section";
-
       const heading = document.createElement("h3");
       heading.textContent = title;
       section.appendChild(heading);
@@ -497,90 +413,64 @@
         }
 
         Object.entries(record).forEach(([key, value]) => {
-          // Never display Airtable relationship references.
-          if (key === "Profile" || key === "File") return;
+          if (key === "Profile") return;
           if (/admin|internal|verification|consent|share token|share url|password|secret|communication|match|created by|last modified by/i.test(key)) return;
-
           addValue(section, key, value);
         });
       });
 
-      if (section.querySelector(".field")) {
-        container.appendChild(section);
-      }
+      if (section.querySelector(".field")) container.appendChild(section);
     }
 
     function renderProfile(profile, headingText = "Sambandha Profile") {
       const card = document.createElement("article");
       card.className = "profile";
-
       const title = document.createElement("h2");
       title.textContent = headingText;
       card.appendChild(title);
 
-      // All candidate photographs.
       renderPhotos(profile, card);
 
-      // Main personal and matrimonial details.
       const mainSection = document.createElement("section");
       mainSection.className = "profile-section";
-
       const mainHeading = document.createElement("h3");
       mainHeading.textContent = "Personal & Matrimonial Details";
       mainSection.appendChild(mainHeading);
 
-      aliasFields.forEach(([key, label]) => {
-        addTextField(mainSection, label, profile[key]);
-      });
+      aliasFields.forEach(([key, label]) => addTextField(mainSection, label, profile[key]));
+      additionalProfileFields.forEach(key => addValue(mainSection, key, profile[key]));
 
-      additionalProfileFields.forEach(key => {
-        addValue(mainSection, key, profile[key]);
-      });
+      if (mainSection.querySelector(".field")) card.appendChild(mainSection);
 
-      if (mainSection.querySelector(".field")) {
-        card.appendChild(mainSection);
-      }
-
-      // Family and horoscope details only.
       sectionDefinitions.forEach(([key, sectionTitle]) => {
         addSection(card, sectionTitle, profile[key]);
       });
 
-      // All uploaded documents and certificates.
       renderDocuments(profile, card);
 
       const notice = document.createElement("p");
       notice.className = "notice";
       notice.textContent =
         "This profile has been shared privately through Sambandha for matrimonial consideration. Please treat all personal and family information as confidential.";
-
       card.appendChild(notice);
-
       return card;
     }
 
     function showError(message) {
       result.replaceChildren();
-
       const paragraph = document.createElement("p");
       paragraph.className = "message";
       paragraph.textContent = message;
-
       result.appendChild(paragraph);
       result.hidden = false;
     }
 
-    // ==========================================
-    // SECURE RECIPIENT-SPECIFIC PROFILE SHARING
-    // ==========================================
-
-    const shareToken =
-      new URLSearchParams(window.location.search).get("token");
+    // Secure recipient-specific profile sharing.
+    const shareToken = new URLSearchParams(window.location.search).get("token");
 
     if (shareToken) {
       document.querySelector(".search").hidden = true;
       result.hidden = false;
-
       const loading = document.createElement("p");
       loading.className = "message";
       loading.textContent = "Loading shared profile…";
@@ -592,38 +482,20 @@
             "/api/share?token=" + encodeURIComponent(shareToken),
             { cache: "no-store" }
           );
-
           const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(
-              data.error || "Unable to open this shared profile."
-            );
-          }
-
-          if (!data.profile) {
-            throw new Error("The shared profile data is unavailable.");
-          }
-
+          if (!response.ok) throw new Error(data.error || "Unable to open this shared profile.");
+          if (!data.profile) throw new Error("The shared profile data is unavailable.");
           result.replaceChildren();
-
-          result.appendChild(
-            renderProfile(data.profile, "Shared Sambandha Profile")
-          );
-
+          result.appendChild(renderProfile(data.profile, "Shared Sambandha Profile"));
         } catch (error) {
           showError(error.message);
         }
       })();
     }
 
-    // ==========================================
-    // EXISTING SAMBANDHA ID LOOKUP
-    // ==========================================
-
+    // Existing Sambandha ID lookup.
     form.addEventListener("submit", async event => {
       event.preventDefault();
-
       const id = input.value.trim().toUpperCase();
 
       if (!/^[A-Z]{3}-\d{4}$/.test(id)) {
@@ -640,35 +512,20 @@
           "/api/profile?id=" + encodeURIComponent(id),
           { cache: "no-store" }
         );
-
         const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data.error || "Profile could not be found."
-          );
-        }
-
+        if (!response.ok) throw new Error(data.error || "Profile could not be found.");
         result.replaceChildren();
-        result.appendChild(
-          renderProfile(data, "Sambandha Profile")
-        );
-
+        result.appendChild(renderProfile(data, "Sambandha Profile"));
         result.hidden = false;
         status.textContent = "";
-
       } catch (error) {
-        status.textContent =
-          error.message === "Failed to fetch"
-            ? "The profile service is not connected yet. Please try again later."
-            : error.message;
+        status.textContent = error.message === "Failed to fetch"
+          ? "The profile service is not connected yet. Please try again later."
+          : error.message;
       }
     });
 
-    // Support existing ID-based links.
-    const requestedId =
-      new URLSearchParams(location.search).get("id");
-
+    const requestedId = new URLSearchParams(location.search).get("id");
     if (requestedId && !shareToken) {
       input.value = requestedId;
       form.requestSubmit();
