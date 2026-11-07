@@ -8,13 +8,13 @@ const SITE_URL = "https://sambanda-profile-site.vercel.app";
 const EXPIRY_DAYS = 7;
 
 const LINK_FIELDS = {
-  preferences: "Preferences",
   family: "Family",
   horoscope: "Horoscope",
   photosDocuments: "Photos/Documents"
 };
 
-// Only these PROFILES fields can be returned to a matched candidate.
+// Explicit whitelist of candidate-facing PROFILES fields.
+// Internal Airtable fields and Partner Preferences are excluded.
 const PROFILE_FIELDS = [
   "Sambandh ID",
   "First Name",
@@ -50,21 +50,8 @@ const PROFILE_FIELDS = [
   "Email Address"
 ];
 
+// Only relevant candidate-facing fields from linked tables.
 const LINKED_FIELDS = {
-  preferences: [
-    "Preferred Age Range",
-    "Preferred Communities",
-    "Preferred Marital Status",
-    "Preferred Education",
-    "Preferred Profession",
-    "Preferred Cities",
-    "Preferred Languages",
-    "Lifestyle Preferences",
-    "Other Expectations",
-    "Minimum Age",
-    "Maximum Age",
-    "Preferred Gender"
-  ],
   family: [
     "Father's Name",
     "Father's Occupation",
@@ -74,6 +61,7 @@ const LINKED_FIELDS = {
     "Family Income Range",
     "Additional Family Information"
   ],
+
   horoscope: [
     "Nakshatra",
     "Rashi",
@@ -85,12 +73,11 @@ const LINKED_FIELDS = {
     "Pada",
     "Lagna",
     "Vedic Shakha",
-    "Horoscope Notes",
-    "Horoscope Document"
+    "Horoscope Notes"
   ],
+
   photosDocuments: [
     "Document Type",
-    "File",
     "Document Notes"
   ]
 };
@@ -130,6 +117,62 @@ function isImageAttachment(file) {
     mime.startsWith("image/") ||
     /\.(jpg|jpeg|png|webp|gif|heic|heif|tif|tiff)$/i.test(name)
   );
+}
+
+function cleanAttachment(file, documentType = "") {
+  return {
+    filename: file.filename || "Uploaded file",
+    url: file.url,
+    type: file.type || "",
+    documentType: documentType || "",
+    size: file.size || null
+  };
+}
+
+function collectAttachments(records = [], fieldName = "File") {
+  const photos = [];
+  const documents = [];
+
+  for (const record of records) {
+    const attachments = getAttachments(record[fieldName]);
+    const documentType = record["Document Type"] || "";
+
+    for (const file of attachments) {
+      const attachment = cleanAttachment(file, documentType);
+
+      if (isImageAttachment(file)) {
+        photos.push(attachment);
+      } else {
+        documents.push(attachment);
+      }
+    }
+  }
+
+  return { photos, documents };
+}
+
+function collectHoroscopeDocuments(records = []) {
+  const documents = [];
+
+  for (const record of records) {
+    const attachments = getAttachments(record["Horoscope Document"]);
+
+    for (const file of attachments) {
+      documents.push(cleanAttachment(file, "Horoscope Document"));
+    }
+  }
+
+  return documents;
+}
+
+function uniqueAttachments(items = []) {
+  const seen = new Set();
+
+  return items.filter(item => {
+    if (!item?.url || seen.has(item.url)) return false;
+    seen.add(item.url);
+    return true;
+  });
 }
 
 export default async function handler(req, res) {
@@ -185,7 +228,9 @@ export default async function handler(req, res) {
   };
 
   try {
-    // GET: Validate the private sharing token.
+    // ==========================================
+    // GET: Validate and display a private link.
+    // ==========================================
     if (req.method === "GET") {
       const rawToken = String(req.query?.token || "").trim();
 
@@ -253,6 +298,7 @@ export default async function handler(req, res) {
         });
       }
 
+      // Verify that the match is still approved.
       const match = await getRecord(MATCH_TABLE, matchId);
       const matchFields = match.fields || {};
 
@@ -262,6 +308,7 @@ export default async function handler(req, res) {
         });
       }
 
+      // Verify both profiles belong to this match.
       const profileA = matchFields["Profile A"]?.[0];
       const profileB = matchFields["Profile B"]?.[0];
 
@@ -274,6 +321,7 @@ export default async function handler(req, res) {
         });
       }
 
+      // Retrieve the candidate whose profile is being shared.
       const profileRecord = await getRecord(
         PROFILE_TABLE,
         sharedProfileId
@@ -287,28 +335,25 @@ export default async function handler(req, res) {
         });
       }
 
-      // Retrieve the linked matrimonial records.
+      // Retrieve only candidate-facing linked records.
+      // PREFERENCES is deliberately not retrieved.
       const [
-        preferences,
         family,
         horoscope,
         photosDocuments
       ] = await Promise.all([
         getLinkedRecords(
-          "PREFERENCES",
-          fields[LINK_FIELDS.preferences],
-          LINKED_FIELDS.preferences
-        ),
-        getLinkedRecords(
           "FAMILY",
           fields[LINK_FIELDS.family],
           LINKED_FIELDS.family
         ),
+
         getLinkedRecords(
           "HOROSCOPE",
           fields[LINK_FIELDS.horoscope],
           LINKED_FIELDS.horoscope
         ),
+
         getLinkedRecords(
           "PHOTOS_DOCUMENTS",
           fields[LINK_FIELDS.photosDocuments],
@@ -316,38 +361,45 @@ export default async function handler(req, res) {
         )
       ]);
 
-      // Collect every image attachment from the candidate's records.
-      const uploadedPhotos = [];
+      // Retrieve every uploaded photograph and document.
+      const uploaded = collectAttachments(
+        photosDocuments,
+        "File"
+      );
 
-      for (const record of photosDocuments) {
-        const attachments = getAttachments(record.File);
-
-        for (const file of attachments) {
-          if (isImageAttachment(file)) {
-            uploadedPhotos.push({
-              filename: file.filename || "Photograph",
-              url: file.url,
-              type: file.type || "image"
-            });
-          }
-        }
-      }
-
-      // Include the primary photograph as well.
+      // Include the primary photograph.
       const primaryAttachments = getAttachments(
         fields["Primary Photograph"]
       );
 
-      for (const file of primaryAttachments) {
-        if (isImageAttachment(file)) {
-          uploadedPhotos.unshift({
-            filename: file.filename || "Primary Photograph",
-            url: file.url,
-            type: file.type || "image"
-          });
-        }
-      }
+      const primaryPhotos = primaryAttachments
+        .filter(isImageAttachment)
+        .map(file => cleanAttachment(file, "Primary Photograph"));
 
+      // Include horoscope documents as well.
+      const horoscopeDocuments =
+        collectHoroscopeDocuments(
+          // Retrieve original HOROSCOPE records for attachment fields.
+          await Promise.all(
+            (fields[LINK_FIELDS.horoscope] || []).map(
+              id => getRecord("HOROSCOPE", id)
+            )
+          ).then(records =>
+            records.map(record => record.fields || {})
+          )
+        );
+
+      const photos = uniqueAttachments([
+        ...primaryPhotos,
+        ...uploaded.photos
+      ]);
+
+      const documents = uniqueAttachments([
+        ...uploaded.documents,
+        ...horoscopeDocuments
+      ]);
+
+      // Build the complete candidate-facing profile.
       const profile = {
         ...selectFields(fields, PROFILE_FIELDS),
 
@@ -360,21 +412,30 @@ export default async function handler(req, res) {
         nativePlace: fields["Native Place"] || "",
         maritalStatus: fields["Marital Status"] || "",
         vertical: fields["Vertical"] || "",
+
         education:
-          fields["Highest Education"] || fields["Education"] || "",
+          fields["Highest Education"] ||
+          fields["Education"] ||
+          "",
+
         profession:
-          fields["Profession Category"] || fields["Profession"] || "",
-        organisation: fields["Organisation/Business"] || "",
+          fields["Profession Category"] ||
+          fields["Profession"] ||
+          "",
+
+        organisation:
+          fields["Organisation/Business"] || "",
+
         languages: fields["Languages"] || "",
         aboutMe: fields["About Me"] || "",
         expectations: fields["Expectations"] || "",
-        primaryPhoto: primaryAttachments[0]?.url || "",
 
-        preferences,
+        primaryPhoto: primaryPhotos[0]?.url || "",
+
         family,
         horoscope,
-        photosDocuments,
-        photos: uploadedPhotos
+        photos,
+        documents
       };
 
       return res.status(200).json({
@@ -383,7 +444,9 @@ export default async function handler(req, res) {
       });
     }
 
-    // POST: Preserve the existing protected share-link generation.
+    // ==========================================
+    // POST: Existing protected link generation.
+    // ==========================================
     const secret = process.env.SHARE_LINK_SECRET;
     const suppliedSecret = req.headers["x-share-secret"];
 
