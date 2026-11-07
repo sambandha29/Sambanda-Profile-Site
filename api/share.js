@@ -14,28 +14,131 @@ const LINK_FIELDS = {
   photosDocuments: "Photos/Documents"
 };
 
-// Never expose internal administration or security fields.
-const PRIVATE_FIELD = /admin|internal|verification|review notes|consent|share token|share url|password|secret|communication|match|created by|last modified by/i;
+// Only these PROFILES fields can be returned to a matched candidate.
+const PROFILE_FIELDS = [
+  "Sambandh ID",
+  "First Name",
+  "Gender",
+  "DOB",
+  "Date of Birth",
+  "Age",
+  "Height (cm)",
+  "Current City",
+  "Native Place",
+  "Marital Status",
+  "Vertical",
+  "Highest Education",
+  "Education",
+  "Profession Category",
+  "Profession",
+  "Organisation/Business",
+  "Languages",
+  "About Me",
+  "Expectations",
+  "Profile Headline",
+  "Detailed Personal Information",
+  "Qualification Details",
+  "Income Range",
+  "Family Background",
+  "Additional Information",
+  "Primary Photograph",
+  "Phone",
+  "Phone Number",
+  "Mobile",
+  "Mobile Number",
+  "Email",
+  "Email Address"
+];
 
-function publicFields(fields = {}, excluded = []) {
+const LINKED_FIELDS = {
+  preferences: [
+    "Preferred Age Range",
+    "Preferred Communities",
+    "Preferred Marital Status",
+    "Preferred Education",
+    "Preferred Profession",
+    "Preferred Cities",
+    "Preferred Languages",
+    "Lifestyle Preferences",
+    "Other Expectations",
+    "Minimum Age",
+    "Maximum Age",
+    "Preferred Gender"
+  ],
+  family: [
+    "Father's Name",
+    "Father's Occupation",
+    "Mother's Name",
+    "Mother's Occupation",
+    "Siblings Details",
+    "Family Income Range",
+    "Additional Family Information"
+  ],
+  horoscope: [
+    "Nakshatra",
+    "Rashi",
+    "Gotra",
+    "Pravara",
+    "Date of Birth",
+    "Time of Birth",
+    "Birth Place",
+    "Pada",
+    "Lagna",
+    "Vedic Shakha",
+    "Horoscope Notes",
+    "Horoscope Document"
+  ],
+  photosDocuments: [
+    "Document Type",
+    "File",
+    "Document Notes"
+  ]
+};
+
+function selectFields(fields = {}, allowed = []) {
   const result = {};
 
-  for (const [key, value] of Object.entries(fields)) {
-    if (excluded.includes(key)) continue;
-    if (PRIVATE_FIELD.test(key)) continue;
-    if (key === "Profile Status") continue;
-
-    result[key] = value;
+  for (const name of allowed) {
+    if (
+      Object.prototype.hasOwnProperty.call(fields, name) &&
+      fields[name] !== null &&
+      fields[name] !== undefined &&
+      fields[name] !== ""
+    ) {
+      result[name] = fields[name];
+    }
   }
 
   return result;
 }
 
+function getAttachments(value) {
+  if (!Array.isArray(value)) return [];
+
+  return value.filter(item =>
+    item &&
+    typeof item.url === "string" &&
+    item.url.startsWith("https://")
+  );
+}
+
+function isImageAttachment(file) {
+  const mime = String(file.type || "").toLowerCase();
+  const name = String(file.filename || "").toLowerCase();
+
+  return (
+    mime.startsWith("image/") ||
+    /\.(jpg|jpeg|png|webp|gif|heic|heif|tif|tiff)$/i.test(name)
+  );
+}
+
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
 
-  if (!["POST", "GET"].includes(req.method)) {
-    return res.status(405).json({ error: "Method not allowed." });
+  if (!["GET", "POST"].includes(req.method)) {
+    return res.status(405).json({
+      error: "Method not allowed."
+    });
   }
 
   const token = process.env.AIRTABLE_TOKEN;
@@ -48,6 +151,7 @@ export default async function handler(req, res) {
   }
 
   const api = `https://api.airtable.com/v0/${baseId}`;
+
   const headers = {
     Authorization: `Bearer ${token}`,
     "Content-Type": "application/json"
@@ -66,20 +170,22 @@ export default async function handler(req, res) {
     return response.json();
   };
 
-  const getLinkedRecords = async (table, ids, excludedFields = []) => {
-    if (!Array.isArray(ids) || ids.length === 0) return [];
+  const getLinkedRecords = async (table, ids, allowedFields) => {
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return [];
+    }
 
     const records = await Promise.all(
       ids.map(id => getRecord(table, id))
     );
 
     return records.map(record =>
-      publicFields(record.fields || {}, excludedFields)
+      selectFields(record.fields || {}, allowedFields)
     );
   };
 
   try {
-    // GET: Validate recipient-specific token and retrieve full profile.
+    // GET: Validate the private sharing token.
     if (req.method === "GET") {
       const rawToken = String(req.query?.token || "").trim();
 
@@ -136,15 +242,14 @@ export default async function handler(req, res) {
       const sharedProfileId = shareFields["Shared Profile"]?.[0];
       const recipientProfileId = shareFields["Recipient Profile"]?.[0];
 
-      if (!matchId || !sharedProfileId || !recipientProfileId) {
+      if (
+        !matchId ||
+        !sharedProfileId ||
+        !recipientProfileId ||
+        sharedProfileId === recipientProfileId
+      ) {
         return res.status(403).json({
-          error: "Share link configuration is incomplete."
-        });
-      }
-
-      if (sharedProfileId === recipientProfileId) {
-        return res.status(403).json({
-          error: "Invalid sharing configuration."
+          error: "Share link configuration is invalid."
         });
       }
 
@@ -182,7 +287,7 @@ export default async function handler(req, res) {
         });
       }
 
-      // Retrieve all linked matrimonial information.
+      // Retrieve the linked matrimonial records.
       const [
         preferences,
         family,
@@ -192,37 +297,59 @@ export default async function handler(req, res) {
         getLinkedRecords(
           "PREFERENCES",
           fields[LINK_FIELDS.preferences],
-          ["Profile"]
+          LINKED_FIELDS.preferences
         ),
         getLinkedRecords(
           "FAMILY",
           fields[LINK_FIELDS.family],
-          ["Profile"]
+          LINKED_FIELDS.family
         ),
         getLinkedRecords(
           "HOROSCOPE",
           fields[LINK_FIELDS.horoscope],
-          ["Profile"]
+          LINKED_FIELDS.horoscope
         ),
         getLinkedRecords(
           "PHOTOS_DOCUMENTS",
           fields[LINK_FIELDS.photosDocuments],
-          ["Profile"]
+          LINKED_FIELDS.photosDocuments
         )
       ]);
 
-      // Keep the original profile properties for compatibility
-      // and include the complete linked profile sections.
+      // Collect every image attachment from the candidate's records.
+      const uploadedPhotos = [];
+
+      for (const record of photosDocuments) {
+        const attachments = getAttachments(record.File);
+
+        for (const file of attachments) {
+          if (isImageAttachment(file)) {
+            uploadedPhotos.push({
+              filename: file.filename || "Photograph",
+              url: file.url,
+              type: file.type || "image"
+            });
+          }
+        }
+      }
+
+      // Include the primary photograph as well.
+      const primaryAttachments = getAttachments(
+        fields["Primary Photograph"]
+      );
+
+      for (const file of primaryAttachments) {
+        if (isImageAttachment(file)) {
+          uploadedPhotos.unshift({
+            filename: file.filename || "Primary Photograph",
+            url: file.url,
+            type: file.type || "image"
+          });
+        }
+      }
+
       const profile = {
-        ...publicFields(fields, [
-          "Family",
-          "Preferences",
-          "Horoscope",
-          "Photos/Documents",
-          "Matches",
-          "COMMUNICATION",
-          "Profile Status"
-        ]),
+        ...selectFields(fields, PROFILE_FIELDS),
 
         profileId: fields["Sambandh ID"] || "",
         firstName: fields["First Name"] || "",
@@ -241,13 +368,13 @@ export default async function handler(req, res) {
         languages: fields["Languages"] || "",
         aboutMe: fields["About Me"] || "",
         expectations: fields["Expectations"] || "",
-        primaryPhoto:
-          fields["Primary Photograph"]?.[0]?.url || "",
+        primaryPhoto: primaryAttachments[0]?.url || "",
 
         preferences,
         family,
         horoscope,
-        photosDocuments
+        photosDocuments,
+        photos: uploadedPhotos
       };
 
       return res.status(200).json({
@@ -256,7 +383,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // POST: Existing protected share-link generation workflow.
+    // POST: Preserve the existing protected share-link generation.
     const secret = process.env.SHARE_LINK_SECRET;
     const suppliedSecret = req.headers["x-share-secret"];
 
@@ -269,7 +396,9 @@ export default async function handler(req, res) {
         Buffer.from(secret)
       )
     ) {
-      return res.status(401).json({ error: "Unauthorized." });
+      return res.status(401).json({
+        error: "Unauthorized."
+      });
     }
 
     const recordId = String(req.body?.recordId || "").trim();
@@ -293,7 +422,11 @@ export default async function handler(req, res) {
     const sharedProfileId = fields["Shared Profile"]?.[0];
     const recipientProfileId = fields["Recipient Profile"]?.[0];
 
-    if (!matchId || !sharedProfileId || !recipientProfileId) {
+    if (
+      !matchId ||
+      !sharedProfileId ||
+      !recipientProfileId
+    ) {
       return res.status(400).json({
         error: "Match, Shared Profile and Recipient Profile are required."
       });
